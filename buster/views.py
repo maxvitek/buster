@@ -1,6 +1,5 @@
 from django.shortcuts import render
-from models import BusStop, BusStopRidership, BusStopDemographics
-from dajaxice.decorators import dajaxice_register
+from models import BusStop
 
 
 # Create your views here.
