@@ -1,0 +1,69 @@
+{% load staticfiles %}
+<!DOCTYPE html>
+<html>
+    <head>
+    <style>
+        @import url(//fonts.googleapis.com/css?family=Yanone+Kaffeesatz:400,700);
+    </style>
+        <title>OpenLayers OSM and Google Example</title>
+        <link href="{% static "maps.css" %}" rel="stylesheet" type="text/css">
+        <link href="{% static "style.css" %}" rel="stylesheet" type="text/css">
+        <script src="http://www.openlayers.org/api/OpenLayers.js"></script>
+        <script>
+            var map;
+            function init() {
+
+                // The overlay layer for our marker, with a simple diamond as symbol
+                var overlay = new OpenLayers.Layer.Vector('Overlay', {
+                    styleMap: new OpenLayers.StyleMap({
+                        externalGraphic: 'http://openlayers.org/dev/img/marker-blue.png',
+                        graphicWidth: 20, graphicHeight: 24, graphicYOffset: -24,
+                        title: '${tooltip}'
+                    })
+                });
+
+                var chicago = new OpenLayers.Geometry.Point(-87.6278, 41.8819)
+                    .transform('EPSG:4326', 'EPSG:3857');
+
+                map = new OpenLayers.Map({
+                    div: "map", projection: "EPSG:3857",
+                    layers: [new OpenLayers.Layer.OSM(), overlay],
+                    center: chicago.getBounds().getCenterLonLat(), zoom: 15
+                });
+
+                {% for b in bus_stop_data %}
+                var bus_stop_loc_{{ b.id }} = new OpenLayers.Geometry.Point({{ b.longitude }}, {{ b.latitude }})
+                    .transform('EPSG:4326', 'EPSG:3857');
+
+                overlay.addFeatures([
+                    new OpenLayers.Feature.Vector(bus_stop_loc_{{ b.id }}, {tooltip: '{{ b.streets }}\nboardings: {{ b.boardings }}\nalightings: {{ b.alightings }}'})
+                ]);
+
+{#                var popup_{{ b.id }} = new OpenLayers.Popup.FramedCloud("Popup",#}
+{#                    bus_stop_loc_{{ b.id }}.getBounds().getCenterLonLat(), null,#}
+{#                    '<a target="_blank" href="http://openlayers.org/">We</a> ' +#}
+{#                    'could be here.<br>Or elsewhere.', null,#}
+{#                    true // <-- true if we want a close (X) button, false otherwise#}
+{#                );#}
+{##}
+{#                map.addPopup(popup_{{ b.id }});#}
+                {% endfor %}
+            }
+        </script>
+    </head>
+    <body onload="init()">
+        <h1 id="title">Buster Map</h1>
+        <p id="shortdesc">
+            Demonstrate use of an OSM layer with markers for each bus stop, and tooltips.
+        </p>
+        <div id="tags">
+            openstreetmap osm marker popup
+        </div>
+        <div id="map" class="smallmap"></div>
+        <div id="docs">
+            <p>
+                This is a simple example of a web-app that takes the Buster app's bus route analysis and makes it available in some way.
+            </p>
+        </div>
+    </body>
+</html>
