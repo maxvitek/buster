@@ -10,23 +10,37 @@
         <link href="{% static "style.css" %}" rel="stylesheet" type="text/css">
         <script src="http://www.openlayers.org/api/OpenLayers.js"></script>
         <script>
-            var map;
+            var map, drawControls, selectControl, selectedFeature, popup, bus_stop_feature;
+
             function init() {
 
-                // The overlay layer for our marker, with a simple diamond as symbol
+                // The overlay layer for our markers, with a simple diamond as symbol
+
                 var boarding_overlay = new OpenLayers.Layer.Vector('BoardingOverlay', {
                     styleMap: new OpenLayers.StyleMap({
-                        externalGraphic: 'http://openlayers.org/dev/img/marker-green.png',
-                        graphicWidth: 20, graphicHeight: 24, graphicYOffset: -24,
-                        title: '${boarding_tooltip}'
+                        "default": new OpenLayers.Style(OpenLayers.Util.applyDefaults({
+                            externalGraphic: "http://openlayers.org/dev/img/marker-green.png",
+                            graphicOpacity: 1,
+                            rotation: 0,
+                            pointRadius: 10
+                        }, OpenLayers.Feature.Vector.style["default"])),
+                        "select": new OpenLayers.Style({
+                            externalGraphic: "http://openlayers.org/dev/img/marker.png"
+                        })
                     })
                 });
 
-                var alighting_overlay = new OpenLayers.Layer.Vector('AlightingOverlay', {
+                var alighting_overlay = new OpenLayers.Layer.Vector('BoardingOverlay', {
                     styleMap: new OpenLayers.StyleMap({
-                        externalGraphic: 'http://openlayers.org/dev/img/marker-blue.png',
-                        graphicWidth: 20, graphicHeight: 24, graphicYOffset: -24,
-                        title: '${alighting_tooltip}'
+                        "default": new OpenLayers.Style(OpenLayers.Util.applyDefaults({
+                            externalGraphic: "http://openlayers.org/dev/img/marker-blue.png",
+                            graphicOpacity: 1,
+                            rotation: 0,
+                            pointRadius: 10
+                        }, OpenLayers.Feature.Vector.style["default"])),
+                        "select": new OpenLayers.Style({
+                            externalGraphic: "http://openlayers.org/dev/img/marker.png"
+                        })
                     })
                 });
 
@@ -44,19 +58,58 @@
                 var bus_stop_loc_{{ b.stop }} = new OpenLayers.Geometry.Point({{ b.longitude }}, {{ b.latitude }})
                     .transform('EPSG:4326', 'EPSG:3857');
 
+                bus_stop_feature = new OpenLayers.Feature.Vector(bus_stop_loc_{{ b.stop }})
+                bus_stop_feature.attributes = {
+                    streets: "{{ b.streets }}",
+                    boardings: "{{ b.boardings }}",
+                    alightings: "{{ b.alightings }}",
+                    median_income: "{{ b.median_income }}"
+                }
+
                 {% if b.boardings > b.alightings %}
 
-                boarding_overlay.addFeatures([
-                    new OpenLayers.Feature.Vector(bus_stop_loc_{{ b.stop }}, {boarding_tooltip: '{{ b.streets }}\nboardings: {{ b.boardings }}\nalightings: {{ b.alightings }}'})
-                ]);
+                boarding_overlay.addFeatures([bus_stop_feature]);
 
                 {% else %}
 
-                alighting_overlay.addFeatures([
-                    new OpenLayers.Feature.Vector(bus_stop_loc_{{ b.stop }}, {alighting_tooltip: '{{ b.streets }}\nboardings: {{ b.boardings }}\nalightings: {{ b.alightings }}'})
-                ]);
+                alighting_overlay.addFeatures([bus_stop_feature]);
 
                 {% endif %}
+                {% endfor %}
+
+                function onPopupClose(evt) {
+                    selectControl.unselect(selectedFeature);
+                }
+
+                function onFeatureSelect(feature) {
+                    selectedFeature = feature;
+                    popup = new OpenLayers.Popup.FramedCloud("chicken",
+                                             feature.geometry.getBounds().getCenterLonLat(),
+                                             null,
+                                             "<div style='font-size:.8em'>" + feature.attributes.streets + "<br>" +
+                                                     "Boardings: " + feature.attributes.boardings + "<br>" +
+                                                     "Alightings: " + feature.attributes.alightings + "<br>" +
+                                                     "Local Median Income: " + feature.attributes.median_income + "</div>",
+                                             null, true, onPopupClose);
+                    feature.popup = popup;
+                    map.addPopup(popup);
+                }
+
+                function onFeatureUnselect(feature) {
+                    map.removePopup(feature.popup);
+                    feature.popup.destroy();
+                    feature.popup = null;
+                }
+
+                selectControl = new OpenLayers.Control.SelectFeature(
+                    [boarding_overlay, alighting_overlay],
+                    {
+                        onSelect: onFeatureSelect, onUnselect: onFeatureUnselect
+                    }
+                );
+
+                map.addControl(selectControl);
+                selectControl.activate();
 
 {#                var popup_{{ b.stop }} = new OpenLayers.Popup.FramedCloud("Popup",#}
 {#                    bus_stop_loc_{{ b.stop }}.getBounds().getCenterLonLat(), null,#}
@@ -66,23 +119,18 @@
 {#                );#}
 {##}
 {#                map.addPopup(popup_{{ b.stop }});#}
-                {% endfor %}
+
             }
         </script>
     </head>
     <body onload="init()">
         <h1 id="title">Buster Map</h1>
         <p id="shortdesc">
-            Demonstrate use of an OSM layer with markers for each bus stop, and tooltips.
+            Demonstrate use of an OSM layer with markers for each bus stop, and popups.
         </p>
         <div id="tags">
             openstreetmap osm marker popup
         </div>
         <div id="map" class="smallmap"></div>
-        <div id="docs">
-            <p>
-                This is a simple example of a web-app that takes the Buster app's bus route analysis and makes it available in some way.
-            </p>
-        </div>
     </body>
 </html>

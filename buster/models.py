@@ -17,7 +17,8 @@ class BusStop(models.Model):
 
 class BusStopDemographics(models.Model):
     id = models.IntegerField(primary_key=True)
-    bus_stop = models.ForeignKey(BusStop, db_column='bus_stop', blank=True, null=True)
+    # bus_stop = models.ForeignKey(BusStop, db_column='bus_stop', blank=True, null=True)
+    bus_stop = models.OneToOneField(BusStop, db_column='bus_stop')
     pct_income_below_poverty = models.FloatField(blank=True, null=True)
     pct_income_less_than_25 = models.FloatField(blank=True, null=True)
     pct_income_between_25_and_50 = models.FloatField(blank=True, null=True)
@@ -67,7 +68,8 @@ class BusStopDemographics(models.Model):
 
 class BusStopRidership(models.Model):
     id = models.IntegerField(primary_key=True)
-    bus_stop = models.ForeignKey(BusStop, db_column='bus_stop', blank=True, null=True)
+    # bus_stop = models.ForeignKey(BusStop, db_column='bus_stop', blank=True, null=True)
+    bus_stop = models.OneToOneField(BusStop, db_column='bus_stop')
     date = models.DateField(blank=True, null=True)
     day_type = models.CharField(max_length=20, blank=True)
     boardings = models.FloatField(blank=True, null=True)

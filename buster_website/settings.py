@@ -68,7 +68,7 @@ WSGI_APPLICATION = 'buster_website.wsgi.application'
 # Parse database configuration from $DATABASE_URL
 
 DATABASES = dict()
-DATABASES['default'] = dj_database_url.config(default='mysql://buster:buster@localhost:8083/buster')
+DATABASES['default'] = dj_database_url.config(default='mysql://buster:buster@127.0.0.1:8083/buster')
 
 # Internationalization
 # https://docs.djangoproject.com/en/1.6/topics/i18n/

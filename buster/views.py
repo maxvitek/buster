@@ -1,5 +1,6 @@
 from django.shortcuts import render
-from models import BusStopRidership
+from models import BusStop, BusStopRidership, BusStopDemographics
+from dajaxice.decorators import dajaxice_register
 
 
 # Create your views here.
@@ -10,15 +11,19 @@ def home(request):
     :param request: http request object
     :return:
     """
-    bus_stops = BusStopRidership.objects.select_related('bus_stop').all()
+    bus_stop = BusStop.objects.select_related('busstopridership', 'busstopdemographics', 'routesandstops').all()
 
-    bus_stop_data = [dict(
-        stop=b_s.bus_stop.id,
-        streets=str(b_s.bus_stop.on_street) + ' and ' + str(b_s.bus_stop.cross_street),
-        latitude=b_s.bus_stop.latitude,
-        longitude=b_s.bus_stop.longitude,
-        boardings=b_s.boardings,
-        alightings=b_s.alightings,
-    ) for b_s in bus_stops]
+    bus_stop_data = []
+
+    for b in bus_stop:
+        bus_stop_data.append(dict(
+            stop=b.id,
+            streets=str(b.on_street) + ' and ' + str(b.cross_street),
+            latitude=b.latitude,
+            longitude=b.longitude,
+            boardings=b.busstopridership.boardings,
+            alightings=b.busstopridership.alightings,
+            median_income=b.busstopdemographics.median_income,
+        ))
 
     return render(request, template_name='index.html', dictionary=dict(bus_stop_data=bus_stop_data))
