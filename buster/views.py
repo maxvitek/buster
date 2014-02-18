@@ -10,7 +10,7 @@ def home(request):
     :param request: http request object
     :return:
     """
-    bus_stops = BusStopRidership.objects.all()
+    bus_stops = BusStopRidership.objects.select_related('bus_stop').all()
 
     bus_stop_data = [dict(
         stop=b_s.bus_stop.id,
